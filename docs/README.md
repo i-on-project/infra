@@ -18,7 +18,7 @@ Firstly, before configuring our playbook, we need to define what machines we do 
 
 An example inventory file is presented as follows:
 
-```toml
+```
 [web]
 iondev.live
 

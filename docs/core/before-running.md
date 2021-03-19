@@ -9,6 +9,6 @@ We also need to created a `cloudflare_credentials.ini` file in the core resource
 
 ```ini
 # Cloudflare API token used by Certbot
-# Generate API KEY on https://dash.cloudflare.com/profile/api-tokens
+# Generate API KEY in https://dash.cloudflare.com/profile/api-tokens
 dns_cloudflare_api_token = cloudflare api key here
 ```
