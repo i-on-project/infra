@@ -1,0 +1,87 @@
+- name: Install Common Dependencies
+  hosts: all
+  become: true
+  tasks:
+    - name: Update aptitude repositories
+      shell: apt update
+    - name: Upgrade aptitude packages
+      shell: apt upgrade -y
+    - name: Install docker and docker-compose
+      shell: apt install docker docker-compose -y
+    - name: Check docker status
+      service:
+        name: docker
+        state: started
+        enabled: true
+    - name: Install git
+      shell: apt install git -y
+
+- name: Install Web Dependencies
+  hosts: web
+  become: true
+  vars_files:
+    - vars/web-vars.yml
+  tasks:
+    - name: Install nginx
+      shell: apt install nginx -y
+    - name: Delete active virtual host configurations
+      shell: rm -f /etc/nginx/sites-enabled/*
+    - name: Copy nginx virtual host configuration
+      copy:
+        src: "./{{ nginx_config }}"
+        dest: /etc/nginx/sites-available/
+    - name: Create virtual host symlink
+      file:
+        path: "/etc/nginx/sites-enabled/{{ nginx_config }}"
+        src: "/etc/nginx/sites-available/{{ nginx_config }}"
+        state: link
+    - name: Check snapd status
+      service:
+        name: snapd
+        state: started
+    - name: Install snap core latest version
+      shell: | 
+        snap install core
+        snap refresh core
+    - name: Install certbot
+      shell: snap install --classic certbot
+    - name: Create certbot symlink
+      file:
+        path: /usr/bin/certbot
+        src: /snap/bin/certbot
+        state: link
+    - name: Ensure certbot containment level
+      shell: snap set certbot trust-plugin-with-root=ok
+    - name: Install cloudflare dns plugin
+      shell: snap install certbot-dns-cloudflare
+    - name: Copy cloudflare credentials
+      copy:
+        src: "./{{cloudflare_credentials_file}}"
+        dest: ./
+        mode: 0600
+    - name: Run certbot
+      shell: >
+        certbot -i nginx -a dns-cloudflare
+        --dns-cloudflare-credentials ./{{cloudflare_credentials_file}}
+        --dns-cloudflare-propagation-seconds 60
+        -d {{domain}}
+        -m {{certbot_email_address}}
+        --agree-tos
+        --non-interactive
+    - name: Check nginx status
+      service:
+        name: nginx
+        state: reloaded
+        enabled: true
+
+- name: Install Database Dependencies
+  hosts: database
+  become: true
+  tasks:
+    - name: Install postgresql
+      shell: apt install postgresql -y
+    - name: Check postgresql status
+      service:
+        name: postgresql
+        state: started
+        enabled: true

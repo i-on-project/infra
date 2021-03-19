@@ -1,0 +1,4 @@
+domain: iondev.live
+nginx_config: "{{ domain }}.conf"
+cloudflare_credentials_file: cloudflare_credentials.ini
+certbot_email_address: redacted@email.com
