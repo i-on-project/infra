@@ -4,7 +4,7 @@
 
 Currently there are several options for provisioning a VM such as Puppet or Chef but in the end Ansible was the winner.
 
-Ansible provides an easy installation and configuration process compared to the alternatives. For example, Puppet and Chef require Ruby knowledge to configure the provisionment file whereas Ansible adheres to a simple YAML configuration, that is extensible with the use of python modules. 
+Ansible provides an easy installation and configuration process compared to the alternatives. For example, Puppet and Chef require Ruby knowledge to configure the provisionment file whereas Ansible adheres to a simple YAML configuration, that is extensible through the use of python modules. 
 
 Also, when provisioning several machines, Ansible allows to do that from the base machine image (as long as the machine has python installed, which is common nowadays), while the alternatives require an Agent to be installed, which adds time to the provisioning process.
 
