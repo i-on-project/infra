@@ -2,7 +2,7 @@
 
 ## Why Ansible
 
-Currently there are several options for provisioning a VM such as Puppet or Chef but in the end Ansible was the winner.
+Currently there are several options for provisioning a VM such as Puppet or Chef but in the end Ansible was the chosen option.
 
 Ansible provides an easy installation and configuration process compared to the alternatives. For example, Puppet and Chef require Ruby knowledge to configure the provisionment file whereas Ansible adheres to a simple YAML configuration, that is extensible through the use of python modules. 
 
@@ -176,6 +176,41 @@ But, what do we do if we have secrets? Secrets shouldn't be in the playbook! To 
 ```
 
 Furthermore, Ansible allows us to use Vaults: we can encrypt our variable files, providing an extra layer of security (or the only layer of security if the file is in source control), however, this feature was not explored as of yet, because it was deemed unnecessary for the time being.
+
+### Replace lines in a file with RegExp
+
+Back to our nginx configuration example it would be nice if we could replace the `server_name` virtual host configuration parameter with the domain that was specified in the `vars_file`, so that we would only need to change the dns name in one file. To achieve this we can use the [lineinfile](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/lineinfile_module.html) module, that allows us to modify or add a line in a specified file.
+
+We can use this module like this:
+
+```yml
+- name: Install nginx and setup virtual host
+  hosts: web
+  become: true
+  vars_files:
+    - my_vars.yml # The vars file where we have the domain variable and the nginx_file variable
+  tasks: 
+    # ...
+    - name: Copy nginx config
+      copy:
+        src: "{{ nginx_file }}"
+        dest: /etc/nginx/sites-available/
+
+    # Change the server_name to match our domain and the www subdomain
+    - name: Change virtual host server name
+      lineinfile: # Use lineinfile module
+        path: "/etc/nginx/sites-available/{{ nginx_file }}" # Where our config is in the remote instance
+        regexp: "(server\\_name\\s\\_;)+" # The regex to replace
+        line: "server_name {{ domain }} www.{{ domain }};" # The replacement string
+        state: present # It requires the line to be present, where the regexp is found (replace operation)
+
+    - name: Enable nginx virtual host
+      file:
+        path: /etc/nginx/sites-enabled/
+        src: "/etc/nginx/sites-available/{{ nginx_file }}"
+        state: link
+    # ...
+```
 
 ### Running our playbook
 
