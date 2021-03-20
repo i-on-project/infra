@@ -30,6 +30,12 @@
       copy:
         src: "../../{{ nginx_config_path }}"
         dest: /etc/nginx/sites-available/
+    - name: Set appropriate server_name
+      lineinfile:
+        path: "/etc/nginx/sites-available/{{ nginx_config_name }}"
+        regexp: "(server\\_name\\s\\_;)+"
+        line: "server_name {{ domain }} www.{{ domain }};"
+        state: present
     - name: Create virtual host symlink
       file:
         path: "/etc/nginx/sites-enabled/{{ nginx_config_name }}"
