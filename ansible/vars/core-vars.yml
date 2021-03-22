@@ -1,5 +1,5 @@
 domain: iondev.live
-nginx_config_name: "{{ domain }}.conf"
+nginx_config_name: "nginx.conf"
 nginx_config_path: "ansible/res/core/{{ nginx_config_name }}"
 cloudflare_credentials_file: ansible/res/core/cloudflare_credentials.ini
 certbot_email_address: redacted@email.com
