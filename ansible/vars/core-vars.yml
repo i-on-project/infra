@@ -2,4 +2,6 @@ domain: iondev.live
 nginx_config_name: "nginx.conf"
 nginx_config_path: "ansible/res/core/{{ nginx_config_name }}"
 cloudflare_credentials_file: ansible/res/core/cloudflare_credentials.ini
+env_prod: ansible/res/core/env_prod
 certbot_email_address: redacted@email.com
+core_repository: https://github.com/i-on-project/core.git

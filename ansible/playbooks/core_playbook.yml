@@ -91,3 +91,48 @@
         name: postgresql
         state: started
         enabled: true
+
+- name: Configure Database
+  hosts: database
+  become: true
+  vars_files:
+    - ../vars/core-db-secrets.yml
+  tasks:
+    - name: Create new database user
+      shell: "sudo -u postgres createuser {{database_user}} || true"
+    - name: Create new database table
+      shell: "sudo -u postgres createdb -U postgres {{database_db}} || true"
+    - name: Change user password
+      shell: "sudo -u postgres psql -c \"alter user {{database_user}} with encrypted password '{{database_password}}';\""
+    - name: Grant database permissions to user
+      shell: "sudo -u postgres psql -c \"grant all privileges on database {{database_db}} to {{database_user}};\""
+    - name: Check postgres user
+      shell: "echo \"\\q\" | PGPASSWORD={{database_password}} psql -h localhost -U {{database_user}}"
+
+- name: Setup Automatic Deployment
+  hosts: web
+  become: true
+  vars_files:
+    - ../vars/core-vars.yml
+    - ../vars/core-db-secrets.yml
+  tasks:
+    - name: Clone GitHub project
+      shell: "git clone {{core_repository}} core"
+    - name: Copy Environment File
+      copy:
+        src: "../../{{ env_prod }}"
+        dest: ./core/.docker
+    - name: Add DB_DATABASE Env
+      lineinfile:
+        path: "./core/.docker/{{ env_prod }}"
+        line: "DB_DATABASE={{ database_db }}}"
+    - name: Add DB_USER Env
+      lineinfile:
+        path: "./core/.docker/{{ env_prod }}"
+        line: "DB_USER={{ database_user }}}"
+    - name: Add DB_PASSWORD Env
+      lineinfile:
+        path: "./core/.docker/{{ env_prod }}"
+        line: "DB_PASSWORD={{ database_password }}}"
+    - name: Run Deployment
+      shell: cd core && docker-compose -f .docker/compose_run_prod.yaml up -d
