@@ -4,8 +4,6 @@
   tasks:
     - name: Update aptitude repositories
       shell: apt update
-    - name: Upgrade aptitude packages
-      shell: apt upgrade -y
     - name: Install docker and docker-compose
       shell: apt install docker docker-compose -y
     - name: Check docker status
@@ -46,9 +44,7 @@
         name: snapd
         state: started
     - name: Install snap core latest version
-      shell: | 
-        snap install core
-        snap refresh core
+      shell: snap install core || snap refresh core
     - name: Install certbot
       shell: snap install --classic certbot
     - name: Create certbot symlink
@@ -65,15 +61,15 @@
         src: "../../{{cloudflare_credentials_file}}"
         dest: ./cf_credentials.ini
         mode: 0600
-    - name: Run certbot
-      shell: >
-        certbot -i nginx -a dns-cloudflare
-        --dns-cloudflare-credentials ./cf_credentials.ini
-        --dns-cloudflare-propagation-seconds 60
-        -d {{domain}}
-        -m {{certbot_email_address}}
-        --agree-tos
-        --non-interactive
+    # - name: Run certbot
+    #   shell: >
+    #     certbot -i nginx -a dns-cloudflare
+    #     --dns-cloudflare-credentials ./cf_credentials.ini
+    #     --dns-cloudflare-propagation-seconds 60
+    #     -d {{domain}}
+    #     -m {{certbot_email_address}}
+    #     --agree-tos
+    #     --non-interactive
     - name: Check nginx status
       service:
         name: nginx
@@ -86,17 +82,31 @@
   tasks:
     - name: Install postgresql
       shell: apt install postgresql -y
+    - name: Retrieve PostgreSQL version
+      shell: ls /etc/postgresql
+      register: postgres_result
+    - name: Set POSTGRES_VERSION fact
+      set_fact:
+        POSTGRES_VERSION: "{{ postgres_result.stdout }}"
+    - name: Set listen_addresses to all
+      lineinfile:
+        path: "/etc/postgresql/{{ POSTGRES_VERSION }}/main/postgresql.conf"
+        line: "listen_addresses='*'"
+    - name: Allow login from docker0 interface
+      lineinfile:
+        path: "/etc/postgresql/{{ POSTGRES_VERSION }}/main/pg_hba.conf"
+        line: "host all all 172.17.0.1/16 md5"
     - name: Check postgresql status
       service:
         name: postgresql
-        state: started
+        state: restarted
         enabled: true
 
 - name: Configure Database
   hosts: database
   become: true
   vars_files:
-    - ../vars/core-db-secrets.yml
+    - ../vars/core-secrets.yml
   tasks:
     - name: Create new database user
       shell: "sudo -u postgres createuser {{database_user}} || true"
@@ -114,25 +124,46 @@
   become: true
   vars_files:
     - ../vars/core-vars.yml
-    - ../vars/core-db-secrets.yml
+    - ../vars/core-secrets.yml
   tasks:
-    - name: Clone GitHub project
-      shell: "git clone {{core_repository}} core"
-    - name: Copy Environment File
-      copy:
-        src: "../../{{ env_prod }}"
-        dest: ./core/.docker
-    - name: Add DB_DATABASE Env
+    - name: Create Environment File
+      shell: touch {{ env_prod_name }}
+    - name: Add DB_HOST
       lineinfile:
-        path: "./core/.docker/{{ env_prod }}"
-        line: "DB_DATABASE={{ database_db }}}"
-    - name: Add DB_USER Env
+        path: "./{{ env_prod_name }}"
+        line: "DB_HOST={{ database_host }}"
+    - name: Add DB_CORE_HOST
       lineinfile:
-        path: "./core/.docker/{{ env_prod }}"
-        line: "DB_USER={{ database_user }}}"
-    - name: Add DB_PASSWORD Env
+        path: "./{{ env_prod_name }}"
+        line: "DB_CORE_HOST={{ database_core_host }}"
+    - name: Add DB_PORT
       lineinfile:
-        path: "./core/.docker/{{ env_prod }}"
-        line: "DB_PASSWORD={{ database_password }}}"
+        path: "./{{ env_prod_name }}"
+        line: "DB_PORT={{ database_port }}"
+    - name: Add DB_DATABASE
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "DB_DATABASE={{ database_db }}"
+    - name: Add DB_USER
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "DB_USER={{ database_user }}"
+    - name: Add DB_PASSWORD
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "DB_PASSWORD={{ database_password }}"
+    - name: Add ION_CORE_SECRET_KEY
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "ION_CORE_SECRET_KEY={{ ion_core_secret_key }}"
+    - name: Add ION_CORE_BASE_URL
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "ION_CORE_BASE_URL={{ ion_core_base_url }}"
     - name: Run Deployment
-      shell: cd core && docker-compose -f .docker/compose_run_prod.yaml up -d
+      shell: >
+        docker run --name core-deploy
+        --env-file ./{{ env_prod_name }}
+        --network host
+        -v /var/run/docker.sock:/var/run/docker.sock
+        -d {{ image_name }}
