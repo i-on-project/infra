@@ -61,15 +61,15 @@
         src: "../../{{cloudflare_credentials_file}}"
         dest: ./cf_credentials.ini
         mode: 0600
-    # - name: Run certbot
-    #   shell: >
-    #     certbot -i nginx -a dns-cloudflare
-    #     --dns-cloudflare-credentials ./cf_credentials.ini
-    #     --dns-cloudflare-propagation-seconds 60
-    #     -d {{domain}}
-    #     -m {{certbot_email_address}}
-    #     --agree-tos
-    #     --non-interactive
+    - name: Run certbot
+      shell: >
+        certbot -i nginx -a dns-cloudflare
+        --dns-cloudflare-credentials ./cf_credentials.ini
+        --dns-cloudflare-propagation-seconds 60
+        -d {{domain}}
+        -m {{certbot_email_address}}
+        --agree-tos
+        --non-interactive
     - name: Check nginx status
       service:
         name: nginx
