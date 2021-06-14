@@ -12,3 +12,11 @@ We also need to created a `cloudflare_credentials.ini` file in the core resource
 # Generate API KEY in https://dash.cloudflare.com/profile/api-tokens
 dns_cloudflare_api_token = cloudflare api key here
 ```
+
+To connect with the database we must rename `core-db-secrets.yml.example` to `core-db-secrets.yml` (located in `ansible/vars`) and change the necessary values:
+
+```yml
+database_user: core
+database_db: core
+database_password: test
+```
