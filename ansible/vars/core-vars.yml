@@ -3,9 +3,9 @@ nginx_config_name: "nginx.conf"
 nginx_config_path: "ansible/res/core/{{ nginx_config_name }}"
 cloudflare_credentials_file: ansible/res/core/cloudflare_credentials.ini
 env_prod_name: env_prod
-certbot_email_address: redacted@email.com
-image_name: ghcr.io/i-on-project/core-deploy:latest
+certbot_email_address: noreply@iondev.live
+certbot_email_name: no-reply ion core
+image_name: ghcr.io/i-on-project/core:latest
 ion_core_base_url: "{{ domain }}"
-database_host: localhost
-database_core_host: "172.17.0.1"
 database_port: "5432"
+integration_repo_remote: https://github.com/xploitedd/integration-data

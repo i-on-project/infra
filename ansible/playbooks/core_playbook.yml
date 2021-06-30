@@ -128,30 +128,10 @@
   tasks:
     - name: Create Environment File
       shell: touch {{ env_prod_name }}
-    - name: Add DB_HOST
+    - name: Add JDBC_DATABASE_URL
       lineinfile:
         path: "./{{ env_prod_name }}"
-        line: "DB_HOST={{ database_host }}"
-    - name: Add DB_CORE_HOST
-      lineinfile:
-        path: "./{{ env_prod_name }}"
-        line: "DB_CORE_HOST={{ database_core_host }}"
-    - name: Add DB_PORT
-      lineinfile:
-        path: "./{{ env_prod_name }}"
-        line: "DB_PORT={{ database_port }}"
-    - name: Add DB_DATABASE
-      lineinfile:
-        path: "./{{ env_prod_name }}"
-        line: "DB_DATABASE={{ database_db }}"
-    - name: Add DB_USER
-      lineinfile:
-        path: "./{{ env_prod_name }}"
-        line: "DB_USER={{ database_user }}"
-    - name: Add DB_PASSWORD
-      lineinfile:
-        path: "./{{ env_prod_name }}"
-        line: "DB_PASSWORD={{ database_password }}"
+        line: "JDBC_DATABASE_URL=jdbc:postgresql://host.docker.internal:{{ database_port }}/{{ database_db }}?user={{ database_user }}&password={{ database_password }}"
     - name: Add ION_CORE_SECRET_KEY
       lineinfile:
         path: "./{{ env_prod_name }}"
@@ -160,10 +140,26 @@
       lineinfile:
         path: "./{{ env_prod_name }}"
         line: "ION_CORE_BASE_URL={{ ion_core_base_url }}"
+    - name: Add SENDGRID_API_KEY
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "SENDGRID_API_KEY={{ sendgrid_api_key }}"
+    - name: Add EMAIL_SENDER_EMAIL
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "EMAIL_SENDER_EMAIL={{ certbot_email_address }}"
+    - name: Add EMAIL_SENDER_NAME
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "EMAIL_SENDER_NAME={{ certbot_email_name }}"
+    - name: Add INTEGRATION_REPOSITORY_REMOTE
+      lineinfile:
+        path: "./{{ env_prod_name }}"
+        line: "INTEGRATION_REPOSITORY_REMOTE={{ integration_repo_remote }}"
     - name: Run Deployment
       shell: >
-        docker run --name core-deploy
+        docker run --name ion-core
         --env-file ./{{ env_prod_name }}
-        --network host
-        -v /var/run/docker.sock:/var/run/docker.sock
+        --add-host host.docker.internal:host-gateway
+        -p 8080:8080
         -d {{ image_name }}
