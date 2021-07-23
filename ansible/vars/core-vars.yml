@@ -6,6 +6,6 @@ env_prod_name: env_prod
 certbot_email_address: noreply@iondev.live
 certbot_email_name: no-reply ion core
 image_name: ghcr.io/i-on-project/core:latest
-ion_core_base_url: "{{ domain }}"
+ion_core_base_url: "https://{{ domain }}"
 database_port: "5432"
 integration_repo_remote: https://github.com/xploitedd/integration-data
